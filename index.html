@@ -314,7 +314,7 @@
         <a href="#about">About</a>
       </nav>
       <div style="display:flex;gap:8px">
-        <a class="btn btn-solid" href="https://github.com/xdemhdx" target="_blank" rel="noopener">GitHub</a>
+        <a class="btn btn-solid" href="https://tools.noxcipher.site">Open the tools</a>
         <button class="btn menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">☰</button>
       </div>
     </div>
@@ -331,8 +331,8 @@
             <span class="line dim"><span data-scramble>Automate</span><span class="dot">.</span></span>
           </h1>
           <p class="lede">
-            My notebook for detection engineering on <strong>Microsoft Sentinel</strong> and <strong>Defender XDR</strong>:
-            the tools I use every day, scripts I trust, and lab experiments. Free, open, and nothing to sign up for.
+            A personal lab for detection engineering on <strong>Microsoft Sentinel</strong> and <strong>Defender XDR</strong>:
+            everyday SOC tools, tested scripts and lab experiments. Free, open, and nothing to sign up for.
           </p>
           <div class="actions">
             <a class="btn btn-solid btn-lg" href="https://tools.noxcipher.site">Open the tools &rarr;</a>
@@ -386,9 +386,9 @@
         <div class="sec-head">
           <div>
             <div class="label">Projects</div>
-            <h2>Things I built<br>and actually use.</h2>
+            <h2>Built for<br>daily SOC work.</h2>
           </div>
-          <p>Each one started as something I kept doing by hand. All open source on GitHub.</p>
+          <p>Each one started as something done by hand too many times. Free to use, nothing to sign up for.</p>
         </div>
         <div class="proj-grid">
           <a class="proj big" href="https://tools.noxcipher.site">
@@ -403,16 +403,6 @@
             <p>Copy-and-run Bash and PowerShell for Linux, Windows, Sentinel and firewalls, with options you fill in before copying.</p>
             <ul class="proj-list"><li>CEF forwarder health check</li><li>FortiGate &amp; PAN-OS backups</li><li>Sentinel ingestion report</li><li>Hardening baselines</li></ul>
           </a>
-          <a class="proj" href="https://github.com/xdemhdx/microsoft-sentinel-cost-calculator" target="_blank" rel="noopener">
-            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></g></svg></span><span class="proj-url">GitHub &nearr;</span></div>
-            <h3>Sentinel cost calculator</h3>
-            <p>Open-source calculator for estimating Microsoft Sentinel ingestion costs.</p>
-          </a>
-          <a class="proj" href="https://github.com/xdemhdx/sentinel-logs-guides" target="_blank" rel="noopener">
-            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h6"/></g></svg></span><span class="proj-url">GitHub &nearr;</span></div>
-            <h3>Sentinel log guides</h3>
-            <p>Notes and guides on getting log sources into Microsoft Sentinel.</p>
-          </a>
         </div>
       </div>
     </section>
@@ -424,7 +414,7 @@
             <div class="label">Focus</div>
             <h2>Less noise.<br>More signal.</h2>
           </div>
-          <p>The four areas I spend most of my time on. One goal: an analyst should only see an alert when it's worth their time.</p>
+          <p>Four areas, one goal: an analyst should only see an alert when it's worth their time.</p>
         </div>
         <div class="caps">
           <div class="cap">
@@ -470,7 +460,7 @@
             <div class="label">Dashboards</div>
             <h2>What the SOC<br>actually looks at.</h2>
           </div>
-          <p>The kind of workbooks I build on Sentinel: SOC posture, firewall telemetry from FortiGate and Palo Alto, and identity risk. Synthetic data.</p>
+          <p>Example Sentinel workbooks: SOC posture, firewall telemetry from FortiGate and Palo Alto, and identity risk. Synthetic data.</p>
         </div>
         <div class="dash">
           <div class="dash-bar">
@@ -534,10 +524,10 @@
         <div class="cta-box">
           <div>
             <div class="label" style="margin-bottom:16px">About</div>
-            <h2>Built in Doha,<br>one ticket at a time.</h2>
-            <p>I'm Omar, a security engineer working on Microsoft Sentinel, Defender XDR and Entra ID. NoxCipher is where I keep the tools and notes I wish I'd had. It's personal: no services, no tracking, no ads.</p>
+            <h2>Built by defenders,<br>for defenders.</h2>
+            <p>NoxCipher is an independent lab for detection engineering on Microsoft Sentinel, Defender XDR and Entra ID: the tools and notes that make alert triage faster. No services, no tracking, no ads.</p>
           </div>
-          <a class="btn btn-solid btn-lg" href="https://github.com/xdemhdx" target="_blank" rel="noopener">github.com/xdemhdx &rarr;</a>
+          <a class="btn btn-solid btn-lg" href="https://scripts.noxcipher.site">Browse the scripts &rarr;</a>
         </div>
       </div>
     </section>
@@ -554,7 +544,7 @@
       </div>
       <div style="text-align:right">
         <div class="foot-links">
-          <a href="https://tools.noxcipher.site">Tools</a><a href="https://scripts.noxcipher.site">Scripts</a><a href="#lab">Lab</a><a href="https://github.com/xdemhdx" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://tools.noxcipher.site">Tools</a><a href="https://scripts.noxcipher.site">Scripts</a><a href="#lab">Lab</a><a href="#about">About</a>
         </div>
         <p class="fine">&copy; <span id="year"></span> NoxCipher</p>
       </div>
@@ -650,7 +640,7 @@
         bars: { title: 'Top risk detections', color: C.amber, rows: [['Unfamiliar sign-in properties',19],['Password spray',11],['Anonymous IP address',8],['Impossible travel',6],['Leaked credentials',3]] },
         table: { title: 'Riskiest users', cols: ['User','Risk','Last event','Location','Response'], rows: [
           ['j.doe@contoso.example',['High','p-high'],'Password spray success','Unknown (hosting)',['Session revoked','p-ok']],
-          ['a.khan@contoso.example',['Medium','p-med'],'Impossible travel','Doha → Frankfurt',['MFA challenged','p-ok']],
+          ['a.khan@contoso.example',['Medium','p-med'],'Impossible travel','London → Frankfurt',['MFA challenged','p-ok']],
           ['svc-backup@contoso.example',['Medium','p-med'],'Legacy auth attempt','Internal',['Blocked by CA','p-ok']],
           ['m.ali@contoso.example',['Low','p-low'],'Anonymous IP','Tor exit',['Monitoring','p-med']] ] }
       }
