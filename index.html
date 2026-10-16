@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08090a" />
+  <meta name="description" content="NoxCipher: a personal lab for detection engineering on Microsoft Sentinel and Defender XDR. Tools, scripts and experiments." />
+  <title>NoxCipher | Detection Engineering</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%2308090a'/%3E%3Cdefs%3E%3Cpath id='n' d='M10 8H16L32 30V8H38V40H32L16 18V40H10Z'/%3E%3CclipPath id='a'%3E%3Crect width='48' height='18'/%3E%3C/clipPath%3E%3CclipPath id='b'%3E%3Crect y='20' width='48' height='8'/%3E%3C/clipPath%3E%3CclipPath id='c'%3E%3Crect y='30' width='48' height='18'/%3E%3C/clipPath%3E%3C/defs%3E%3Cg clip-path='url%28%23a%29'%3E%3Cuse href='%23n' fill='%23EDEDEA'/%3E%3C/g%3E%3Cg clip-path='url%28%23b%29'%3E%3Cuse href='%23n' fill='%233DFFA2' transform='translate%283 0%29'/%3E%3C/g%3E%3Cg clip-path='url%28%23c%29'%3E%3Cuse href='%23n' fill='%23EDEDEA'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #08090a;
+      --surface: #0e1011;
+      --surface-2: #131617;
+      --line: rgba(255,255,255,.08);
+      --line-2: rgba(255,255,255,.14);
+      --text: #ededea;
+      --muted: #8b9094;
+      --faint: #5b6064;
+      --accent: #3dffa2;
+      --accent-dim: rgba(61,255,162,.10);
+      --warn: #ffb547;
+      --sans: 'Geist', system-ui, sans-serif;
+      --mono: 'Geist Mono', ui-monospace, monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 400 16px/1.6 var(--sans);
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; }
+    ::selection { background: var(--accent); color: #04140b; }
+    .wrap { width: min(1200px, calc(100% - 32px)); margin: 0 auto; }
+    .label {
+      font: 500 12px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+    }
+    .label b { color: var(--accent); font-weight: 500; }
+
+    /* ---------- logo ---------- */
+    .logo { display: inline-flex; align-items: center; gap: 10px; }
+    .logo svg { width: 30px; height: 30px; color: var(--text); flex: none; }
+    .logo-word { font: 600 17px var(--sans); letter-spacing: -.01em; }
+    .logo-word span { color: var(--muted); font-weight: 500; }
+
+    /* ---------- nav ---------- */
+    header {
+      position: sticky; top: 0; z-index: 30;
+      background: rgba(8,9,10,.78); backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .nav-links { display: flex; gap: 28px; font-size: 14px; color: var(--muted); }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px;
+      border-radius: 8px; font: 500 14px var(--sans); border: 1px solid var(--line-2);
+      background: transparent; cursor: pointer; transition: background .15s, border-color .15s, transform .15s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.24); }
+    .btn-solid { background: var(--accent); color: #04140b; border-color: var(--accent); font-weight: 600; }
+    .btn-solid:hover { background: #6bffbb; border-color: #6bffbb; }
+    .btn-lg { height: 48px; padding: 0 22px; font-size: 15px; }
+    .menu-btn { display: none; width: 40px; padding: 0; justify-content: center; }
+
+    /* ---------- hero ---------- */
+    .hero { padding: 88px 0 72px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+    h1 {
+      margin: 22px 0 24px; font-weight: 600; letter-spacing: -.045em; line-height: .95;
+      font-size: clamp(2.9rem, 6.6vw, 5.6rem);
+    }
+    h1 .line { display: block; }
+    h1 .dot { color: var(--accent); }
+    h1 .dim { color: var(--muted); }
+    .lede { max-width: 520px; color: var(--muted); font-size: 18px; line-height: 1.6; margin: 0 0 32px; }
+    .lede strong { color: var(--text); font-weight: 500; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    /* detection card */
+    .rule {
+      border: 1px solid var(--line-2); border-radius: 14px; background: var(--surface);
+      box-shadow: 0 40px 100px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(61,255,162,.04);
+      overflow: hidden;
+    }
+    .rule-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 14px 18px; border-bottom: 1px solid var(--line); font: 500 12px var(--mono); color: var(--muted);
+    }
+    .sev { display: inline-flex; align-items: center; gap: 6px; color: var(--warn); }
+    .sev::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+    .rule-title { padding: 18px 18px 4px; }
+    .rule-title h3 { margin: 0 0 10px; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font: 500 11px var(--mono); padding: 4px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+    .tag.on { color: var(--accent); background: var(--accent-dim); border-color: rgba(61,255,162,.22); }
+    pre {
+      margin: 16px 18px; padding: 16px; border-radius: 10px; background: #060707; border: 1px solid var(--line);
+      font: 400 12.5px/1.75 var(--mono); color: #c9cdc9; overflow-x: auto;
+    }
+    .k { color: #7fb8ff; } .s { color: #e6c07b; } .n { color: #f78c6c; } .t { color: var(--accent); } .c { color: var(--faint); }
+    .chart { padding: 0 18px 6px; }
+    .chart-top { display: flex; justify-content: space-between; font: 500 11px var(--mono); color: var(--faint); margin-bottom: 8px; }
+    .bars { display: flex; align-items: flex-end; gap: 3px; height: 56px; }
+    .bars i { flex: 1; background: rgba(255,255,255,.12); border-radius: 2px 2px 0 0; min-height: 3px; }
+    .bars i.hit { background: var(--accent); box-shadow: 0 0 12px rgba(61,255,162,.4); }
+    .rule-foot {
+      display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; margin-top: 12px;
+      border-top: 1px solid var(--line); font: 500 11px var(--mono); color: var(--faint);
+    }
+
+    /* ---------- platform strip ---------- */
+    .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 20px 0; }
+    .strip-in { display: flex; align-items: center; gap: 32px; flex-wrap: wrap; }
+    .strip-items { display: flex; gap: 10px 28px; flex-wrap: wrap; font: 500 14px var(--sans); color: #b9bdbd; }
+
+    /* ---------- sections ---------- */
+    section.block { padding: 112px 0; }
+    .sec-head { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 56px; }
+    h2 { margin: 14px 0 0; font-weight: 600; letter-spacing: -.035em; line-height: 1.02; font-size: clamp(2rem, 4.4vw, 3.4rem); }
+    .sec-head p { margin: 0; color: var(--muted); font-size: 17px; max-width: 460px; justify-self: end; }
+
+    .caps { border-top: 1px solid var(--line); }
+    .cap {
+      display: grid; grid-template-columns: 80px 1fr 1.3fr; gap: 24px; padding: 30px 8px;
+      border-bottom: 1px solid var(--line); transition: background .2s;
+    }
+    .cap:hover { background: rgba(255,255,255,.02); }
+    .cap .num { font: 500 13px var(--mono); color: var(--faint); padding-top: 5px; }
+    .cap:hover .num { color: var(--accent); }
+    .cap h3 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+    .cap p { margin: 0 0 14px; color: var(--muted); }
+
+    /* dashboards */
+    .dash { border: 1px solid var(--line-2); border-radius: 16px; background: var(--surface); overflow: hidden; }
+    .dash-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 12px 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .dash-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+    .dash-tab { background: none; border: 1px solid transparent; border-radius: 8px; padding: 7px 12px; cursor: pointer; color: var(--muted); font: 500 13px var(--sans); }
+    .dash-tab:hover { color: var(--text); }
+    .dash-tab[aria-selected="true"] { color: var(--text); background: var(--surface-2); border-color: var(--line-2); }
+    .dash-meta { display: flex; align-items: center; gap: 8px; font: 500 11px var(--mono); color: var(--faint); }
+    .live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .dash-body { padding: 16px; display: grid; gap: 12px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .kpi { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: #0b0d0e; }
+    .kpi small { display: block; font: 500 11px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+    .kpi strong { display: block; font-size: 28px; font-weight: 600; letter-spacing: -.03em; margin: 6px 0 2px; }
+    .kpi span { font: 500 12px var(--mono); }
+    .up { color: var(--warn); } .down { color: var(--accent); } .flat { color: var(--muted); }
+    .dash-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; }
+    .panel { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; background: #0b0d0e; min-width: 0; }
+    .panel-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
+    .legend { display: flex; gap: 12px; font: 500 11px var(--mono); color: var(--muted); flex-wrap: wrap; }
+    .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: 0; }
+    .chart-svg { width: 100%; height: 190px; display: block; }
+    .hbars { display: grid; gap: 10px; }
+    .hbar { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 13px; align-items: baseline; }
+    .hbar b { font: 500 12px var(--mono); color: var(--muted); }
+    .hbar .track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.06); overflow: hidden; }
+    .hbar .fill { height: 100%; border-radius: 3px; }
+    .tbl-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font: 400 12px var(--mono); }
+    th { text-align: left; color: var(--faint); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: #c3c7c5; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    .pill { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; }
+    .p-high { color: #ff7a7a; background: rgba(255,107,107,.1); }
+    .p-med { color: var(--warn); background: rgba(255,181,71,.1); }
+    .p-low { color: #7fb8ff; background: rgba(127,184,255,.1); }
+    .p-ok { color: var(--accent); background: var(--accent-dim); }
+    .dash-note { padding: 10px 16px; border-top: 1px solid var(--line); font: 500 11px var(--mono); color: var(--faint); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+    /* lab */
+    .lab { display: grid; grid-template-columns: .8fr 1.2fr; gap: 24px; }
+    .scenarios { display: flex; flex-direction: column; gap: 8px; }
+    .scn {
+      text-align: left; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--line);
+      background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .scn:hover { border-color: var(--line-2); }
+    .scn[aria-pressed="true"] { border-color: rgba(61,255,162,.4); background: linear-gradient(90deg, var(--accent-dim), var(--surface) 70%); }
+    .scn strong { display: block; font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+    .scn span { color: var(--muted); font-size: 14px; }
+    .scn small { display: block; font: 500 11px var(--mono); color: var(--faint); margin-bottom: 8px; letter-spacing: .06em; text-transform: uppercase; }
+    .scn[aria-pressed="true"] small { color: var(--accent); }
+
+    .term { border-radius: 14px; border: 1px solid var(--line-2); background: #060707; overflow: hidden; display: flex; flex-direction: column; min-height: 420px; }
+    .term-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); font: 500 12px var(--mono); color: var(--faint); }
+    .dots { display: flex; gap: 6px; } .dots i { width: 10px; height: 10px; border-radius: 50%; background: #2a2d2f; }
+    .term-body { flex: 1; padding: 18px 20px; font: 400 13px/1.85 var(--mono); color: #a7acaa; overflow: auto; }
+    .term-body .ok { color: var(--accent); } .term-body .inf { color: #7fb8ff; } .term-body .wr { color: var(--warn); } .term-body .mut { color: var(--faint); }
+    .caret { display: inline-block; width: 8px; height: 15px; background: var(--accent); vertical-align: -2px; animation: blink 1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .term-foot { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); font: 500 11px var(--mono); color: var(--faint); }
+    .term-foot button { background: none; border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; cursor: pointer; color: var(--muted); font: 500 11px var(--mono); }
+    .term-foot button:hover { color: var(--text); border-color: var(--line-2); }
+
+    /* process */
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .step { padding: 28px 24px 32px; border-right: 1px solid var(--line); background: var(--surface); }
+    .step:last-child { border-right: 0; }
+    .step .label { display: block; margin-bottom: 40px; }
+    .step h3 { margin: 0 0 8px; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+    .step p { margin: 0; color: var(--muted); font-size: 15px; }
+
+    /* cta */
+    .cta { padding: 40px 0 112px; }
+    .cta-box {
+      position: relative; overflow: hidden; border-radius: 18px; border: 1px solid var(--line-2);
+      padding: 64px 48px; background: var(--surface);
+      display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: end;
+    }
+    .cta-box::after {
+      content: ""; position: absolute; right: -80px; top: -80px; width: 360px; height: 360px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(61,255,162,.16), transparent 65%); pointer-events: none;
+    }
+    .cta-box h2 { margin: 0; max-width: 640px; }
+    .cta-box p { margin: 16px 0 0; color: var(--muted); max-width: 520px; }
+
+
+    /* projects */
+    .proj-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .proj { display: flex; flex-direction: column; gap: 10px; padding: 22px 22px 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: border-color .15s, transform .15s, background .15s; }
+    .proj:hover { border-color: rgba(61,255,162,.35); transform: translateY(-2px); background: #101213; }
+    .proj-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .proj-ico { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-dim); border: 1px solid rgba(61,255,162,.25); color: var(--accent); }
+    .proj-ico svg { width: 19px; height: 19px; }
+    .proj-url { font: 500 12px var(--mono); color: var(--faint); }
+    .proj:hover .proj-url { color: var(--accent); }
+    .proj h3 { margin: 6px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -.02em; }
+    .proj p { margin: 0; color: var(--muted); }
+    .proj-list { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+    .proj-list li { font: 500 11.5px var(--mono); padding: 3px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--muted); }
+    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; }
+    .foot { display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-start; }
+    .foot-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); flex-wrap: wrap; }
+    .foot-links a:hover { color: var(--text); }
+    .fine { margin-top: 14px; max-width: 520px; color: var(--faint); font-size: 13px; }
+
+    @media (max-width: 1000px) {
+      .hero-grid, .lab, .sec-head, .dash-grid { grid-template-columns: 1fr; }
+      .sec-head p { justify-self: start; }
+      .hero { padding-top: 56px; }
+      .steps { grid-template-columns: 1fr 1fr; }
+      .step:nth-child(2) { border-right: 0; }
+      .step:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+    }
+    @media (max-width: 760px) {
+      .nav-links, .nav .btn-solid { display: none; }
+      .menu-btn { display: inline-flex; }
+      .nav-links.open {
+        display: flex; flex-direction: column; gap: 0; position: absolute; left: 16px; right: 16px; top: 72px;
+        background: var(--surface); border: 1px solid var(--line-2); border-radius: 12px; padding: 8px;
+      }
+      .nav-links.open a { padding: 12px; border-radius: 8px; color: var(--text); }
+      .cap { grid-template-columns: 1fr; gap: 8px; padding: 26px 0; }
+      .proj-grid { grid-template-columns: minmax(0, 1fr); }
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .kpi strong { font-size: 22px; }
+      .dash-body { padding: 12px; }
+      .steps { grid-template-columns: 1fr; }
+      .step { border-right: 0 !important; border-bottom: 1px solid var(--line); }
+      .step:last-child { border-bottom: 0; }
+      .step .label { margin-bottom: 20px; }
+      .cta-box { grid-template-columns: 1fr; padding: 40px 24px; }
+      section.block { padding: 80px 0; }
+      pre { font-size: 11.5px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+      html { scroll-behavior: auto; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Logo definition: an N cut into three bands, the middle band shifted like a Caesar cipher -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <path id="nx-n" d="M10 8H16L32 30V8H38V40H32L16 18V40H10Z"/>
+      <clipPath id="nx-top"><rect x="0" y="0" width="48" height="18"/></clipPath>
+      <clipPath id="nx-mid"><rect x="0" y="20" width="48" height="8"/></clipPath>
+      <clipPath id="nx-bot"><rect x="0" y="30" width="48" height="18"/></clipPath>
+      <symbol id="nx-mark" viewBox="0 0 48 48">
+        <g clip-path="url(#nx-top)"><use href="#nx-n" fill="currentColor"/></g>
+        <g clip-path="url(#nx-mid)"><use href="#nx-n" style="fill:#3dffa2" transform="translate(4 0)"/></g>
+        <g clip-path="url(#nx-bot)"><use href="#nx-n" fill="currentColor"/></g>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header>
+    <div class="wrap nav">
+      <a class="logo" href="#top" aria-label="NoxCipher home">
+        <svg aria-hidden="true"><use href="#nx-mark"/></svg>
+        <span class="logo-word">nox<span>cipher</span></span>
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#projects">Projects</a>
+        <a href="#focus">Focus</a>
+        <a href="#dashboards">Dashboards</a>
+        <a href="#lab">Lab</a>
+        <a href="#about">About</a>
+      </nav>
+      <div style="display:flex;gap:8px">
+        <a class="btn btn-solid" href="https://github.com/xdemhdx" target="_blank" rel="noopener">GitHub</a>
+        <button class="btn menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <div class="label"><b>●</b>&nbsp; Personal lab &middot; Detection engineering &middot; Microsoft security</div>
+          <h1>
+            <span class="line"><span data-scramble>Detect</span><span class="dot">.</span></span>
+            <span class="line"><span data-scramble>Defend</span><span class="dot">.</span></span>
+            <span class="line dim"><span data-scramble>Automate</span><span class="dot">.</span></span>
+          </h1>
+          <p class="lede">
+            My notebook for detection engineering on <strong>Microsoft Sentinel</strong> and <strong>Defender XDR</strong>:
+            the tools I use every day, scripts I trust, and lab experiments. Free, open, and nothing to sign up for.
+          </p>
+          <div class="actions">
+            <a class="btn btn-solid btn-lg" href="https://tools.noxcipher.site">Open the tools &rarr;</a>
+            <a class="btn btn-lg" href="https://scripts.noxcipher.site">Browse scripts</a>
+          </div>
+        </div>
+
+        <article class="rule" aria-label="Example detection rule">
+          <div class="rule-head">
+            <span>analytics/NX-ID-0142.kql</span>
+            <span class="sev">High</span>
+          </div>
+          <div class="rule-title">
+            <h3>Password spray from a single source</h3>
+            <div class="tags">
+              <span class="tag on">T1110.003</span>
+              <span class="tag">Credential Access</span>
+              <span class="tag">Entra ID</span>
+            </div>
+          </div>
+<pre><span class="t">SigninLogs</span>
+| <span class="k">where</span> TimeGenerated &gt; <span class="k">ago</span>(<span class="n">1h</span>)
+| <span class="k">where</span> ResultType <span class="k">in</span> (<span class="s">"50126"</span>, <span class="s">"50053"</span>)
+| <span class="k">summarize</span> Failures = <span class="k">count</span>(),
+            Users = <span class="k">dcount</span>(UserPrincipalName)
+            <span class="k">by</span> IPAddress
+| <span class="k">where</span> Users &gt; <span class="n">15</span> <span class="k">and</span> Failures &gt; <span class="n">40</span>  <span class="c">// tuned</span></pre>
+          <div class="chart">
+            <div class="chart-top"><span>Matches, last 24h</span><span id="hitCount">3 alerts</span></div>
+            <div class="bars" id="bars"></div>
+          </div>
+          <div class="rule-foot"><span>Sample data</span><span>No customer telemetry</span></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="strip">
+      <div class="wrap strip-in">
+        <span class="label">Works across</span>
+        <div class="strip-items">
+          <span>Microsoft Sentinel</span><span>Defender XDR</span><span>Entra ID</span>
+          <span>Purview</span><span>Intune</span><span>Azure Arc</span>
+          <span>FortiGate</span><span>Palo Alto PAN-OS</span><span>KQL</span>
+        </div>
+      </div>
+    </div>
+
+
+    <section class="block" id="projects">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="label">Projects</div>
+            <h2>Things I built<br>and actually use.</h2>
+          </div>
+          <p>Each one started as something I kept doing by hand. All open source on GitHub.</p>
+        </div>
+        <div class="proj-grid">
+          <a class="proj big" href="https://tools.noxcipher.site">
+            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 6.5l3-3 3 3-3 3M3.5 20.5l8-8M9 4l2 2-5 5-2-2z"/><path d="M14 14l6 6"/></g></svg></span><span class="proj-url">tools.noxcipher.site &nearr;</span></div>
+            <h3>Tools</h3>
+            <p>Browser tools for SOC work. Everything runs locally; nothing is uploaded.</p>
+            <ul class="proj-list"><li>AMA connectivity planner</li><li>DCR builder</li><li>Firewall rule builder</li><li>CEF parser</li><li>Time, CIDR, JWT, encoders</li></ul>
+          </a>
+          <a class="proj big" href="https://scripts.noxcipher.site">
+            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="16" rx="2.5"/><path d="M7 9.5l3 2.5-3 2.5M12.5 15H17"/></g></svg></span><span class="proj-url">scripts.noxcipher.site &nearr;</span></div>
+            <h3>Scripts</h3>
+            <p>Copy-and-run Bash and PowerShell for Linux, Windows, Sentinel and firewalls, with options you fill in before copying.</p>
+            <ul class="proj-list"><li>CEF forwarder health check</li><li>FortiGate &amp; PAN-OS backups</li><li>Sentinel ingestion report</li><li>Hardening baselines</li></ul>
+          </a>
+          <a class="proj" href="https://github.com/xdemhdx/microsoft-sentinel-cost-calculator" target="_blank" rel="noopener">
+            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M16 12h0M8 16h2M12 16h2M16 16h0"/></g></svg></span><span class="proj-url">GitHub &nearr;</span></div>
+            <h3>Sentinel cost calculator</h3>
+            <p>Open-source calculator for estimating Microsoft Sentinel ingestion costs.</p>
+          </a>
+          <a class="proj" href="https://github.com/xdemhdx/sentinel-logs-guides" target="_blank" rel="noopener">
+            <div class="proj-top"><span class="proj-ico"><svg viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h10l4 4v12H5z"/><path d="M15 4v4h4M8 12h8M8 16h6"/></g></svg></span><span class="proj-url">GitHub &nearr;</span></div>
+            <h3>Sentinel log guides</h3>
+            <p>Notes and guides on getting log sources into Microsoft Sentinel.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="focus" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="label">Focus</div>
+            <h2>Less noise.<br>More signal.</h2>
+          </div>
+          <p>The four areas I spend most of my time on. One goal: an analyst should only see an alert when it's worth their time.</p>
+        </div>
+        <div class="caps">
+          <div class="cap">
+            <span class="num">01</span>
+            <h3>Detection engineering</h3>
+            <div>
+              <p>Analytics rules written, tuned and mapped to MITRE ATT&amp;CK, with false-positive budgets and test cases behind every one.</p>
+              <div class="tags"><span class="tag">KQL</span><span class="tag">ATT&amp;CK mapping</span><span class="tag">Detection-as-code</span></div>
+            </div>
+          </div>
+          <div class="cap">
+            <span class="num">02</span>
+            <h3>Telemetry engineering</h3>
+            <div>
+              <p>Onboarding and shaping the data first: FortiGate and Palo Alto firewalls over CEF/Syslog via AMA, Arc-connected servers, DCR transforms, and ingestion cost under control.</p>
+              <div class="tags"><span class="tag">FortiGate</span><span class="tag">PAN-OS</span><span class="tag">AMA / DCR</span><span class="tag">Cost tuning</span></div>
+            </div>
+          </div>
+          <div class="cap">
+            <span class="num">03</span>
+            <h3>Security automation</h3>
+            <div>
+              <p>Playbooks and API-driven enrichment that close the easy incidents automatically and hand analysts a head start on the rest.</p>
+              <div class="tags"><span class="tag">Logic Apps</span><span class="tag">Graph API</span><span class="tag">Enrichment</span></div>
+            </div>
+          </div>
+          <div class="cap">
+            <span class="num">04</span>
+            <h3>Validation &amp; research</h3>
+            <div>
+              <p>Controlled attack simulations that prove a detection fires, plus research that turns new attacker techniques into rules.</p>
+              <div class="tags"><span class="tag">Attack simulation</span><span class="tag">Threat research</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="dashboards" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="label">Dashboards</div>
+            <h2>What the SOC<br>actually looks at.</h2>
+          </div>
+          <p>The kind of workbooks I build on Sentinel: SOC posture, firewall telemetry from FortiGate and Palo Alto, and identity risk. Synthetic data.</p>
+        </div>
+        <div class="dash">
+          <div class="dash-bar">
+            <div class="dash-tabs" role="tablist">
+              <button class="dash-tab" role="tab" data-dash="soc" aria-selected="true">SOC overview</button>
+              <button class="dash-tab" role="tab" data-dash="fw" aria-selected="false">Firewalls</button>
+              <button class="dash-tab" role="tab" data-dash="id" aria-selected="false">Identity</button>
+            </div>
+            <div class="dash-meta"><span class="live"></span><span>Last 24h &middot; refreshed 1m ago</span></div>
+          </div>
+          <div class="dash-body" id="dashBody"></div>
+          <div class="dash-note"><span id="dashSrc">Source: SecurityIncident, SecurityAlert</span><span>Synthetic data &middot; no customer telemetry</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="lab" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head">
+          <div>
+            <div class="label">Lab</div>
+            <h2>Watch a detection<br>run end to end.</h2>
+          </div>
+          <p>Pick a scenario. Each one walks from raw events to a correlated incident using synthetic data only.</p>
+        </div>
+        <div class="lab">
+          <div class="scenarios" role="group" aria-label="Scenarios">
+            <button class="scn" data-scn="identity" aria-pressed="true">
+              <small>Scenario 01 &middot; Identity</small>
+              <strong>Password spray to compromise</strong>
+              <span>Failed sign-ins, one success, then a new MFA method.</span>
+            </button>
+            <button class="scn" data-scn="cloud" aria-pressed="false">
+              <small>Scenario 02 &middot; Cloud</small>
+              <strong>Suspicious role assignment</strong>
+              <span>Owner role granted outside change window, then key vault access.</span>
+            </button>
+            <button class="scn" data-scn="network" aria-pressed="false">
+              <small>Scenario 03 &middot; Network</small>
+              <strong>Beaconing from an endpoint</strong>
+              <span>Regular outbound intervals to a newly registered domain.</span>
+            </button>
+            <button class="scn" data-scn="firewall" aria-pressed="false">
+              <small>Scenario 04 &middot; Firewall</small>
+              <strong>Exploit attempt across two vendors</strong>
+              <span>FortiGate IPS drop and Palo Alto threat log from the same source.</span>
+            </button>
+          </div>
+          <div class="term">
+            <div class="term-head"><div class="dots"><i></i><i></i><i></i></div><span id="termTitle">lab / identity</span><span>synthetic</span></div>
+            <div class="term-body" id="term" aria-live="polite"></div>
+            <div class="term-foot"><span>Illustrative only</span><button id="copyBtn">Copy output</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="cta" id="about">
+      <div class="wrap">
+        <div class="cta-box">
+          <div>
+            <div class="label" style="margin-bottom:16px">About</div>
+            <h2>Built in Doha,<br>one ticket at a time.</h2>
+            <p>I'm Omar, a security engineer working on Microsoft Sentinel, Defender XDR and Entra ID. NoxCipher is where I keep the tools and notes I wish I'd had. It's personal: no services, no tracking, no ads.</p>
+          </div>
+          <a class="btn btn-solid btn-lg" href="https://github.com/xdemhdx" target="_blank" rel="noopener">github.com/xdemhdx &rarr;</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <div>
+        <a class="logo" href="#top" aria-label="NoxCipher home">
+          <svg aria-hidden="true"><use href="#nx-mark"/></svg>
+          <span class="logo-word">nox<span>cipher</span></span>
+        </a>
+        <p class="fine">Personal site. All telemetry, rule output and indicators shown are synthetic and don't represent any real environment.</p>
+      </div>
+      <div style="text-align:right">
+        <div class="foot-links">
+          <a href="https://tools.noxcipher.site">Tools</a><a href="https://scripts.noxcipher.site">Scripts</a><a href="#lab">Lab</a><a href="https://github.com/xdemhdx" target="_blank" rel="noopener">GitHub</a>
+        </div>
+        <p class="fine">&copy; <span id="year"></span> NoxCipher</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+  (() => {
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // mobile menu
+    const links = document.getElementById('navLinks'), mb = document.getElementById('menuBtn');
+    mb.addEventListener('click', () => {
+      const o = links.classList.toggle('open');
+      mb.setAttribute('aria-expanded', o); mb.textContent = o ? '×' : '☰';
+    });
+    links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      links.classList.remove('open'); mb.textContent = '☰'; mb.setAttribute('aria-expanded', 'false');
+    }));
+
+    // headline decrypt effect
+    const glyphs = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*';
+    document.querySelectorAll('[data-scramble]').forEach((el, i) => {
+      const final = el.textContent;
+      if (reduce) return;
+      let frame = 0; const start = 8 + i * 10, per = 3;
+      const tick = () => {
+        let out = '';
+        for (let c = 0; c < final.length; c++) {
+          out += frame >= start + c * per ? final[c] : glyphs[Math.floor(Math.random() * glyphs.length)];
+        }
+        el.textContent = out;
+        if (frame++ < start + final.length * per) requestAnimationFrame(tick);
+        else el.textContent = final;
+      };
+      tick();
+    });
+
+    // hourly match bars
+    const vals = [2,3,2,4,3,2,5,3,4,6,3,2,14,22,9,4,3,5,3,2,4,18,6,3];
+    const bars = document.getElementById('bars');
+    const max = Math.max(...vals);
+    vals.forEach(v => {
+      const b = document.createElement('i');
+      b.style.height = (v / max * 100) + '%';
+      if (v > 12) b.className = 'hit';
+      bars.appendChild(b);
+    });
+
+    // dashboards (synthetic, deterministic data)
+    const C = { mint:'#3dffa2', blue:'#7fb8ff', amber:'#ffb547', red:'#ff6b6b', grey:'#5b6064' };
+    const seq = (n, base, amp, seed, spikes = {}) => Array.from({ length: n }, (_, i) => {
+      const s = Math.sin(i * 0.55 + seed) * 0.5 + Math.sin(i * 1.7 + seed * 2) * 0.25;
+      return Math.max(0, Math.round(base + s * amp + (spikes[i] || 0)));
+    });
+    const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0') + ':00');
+    const D = {
+      soc: {
+        src: 'Source: SecurityIncident, SecurityAlert',
+        kpis: [['Open incidents','14','+3 vs yesterday','up'],['Mean time to triage','11m','-4m','down'],['Alerts closed by automation','68%','+6 pts','down'],['ATT&CK techniques covered','142','+5 this month','down']],
+        chart: { title: 'Alerts per hour by severity', series: [
+          ['High', C.red, seq(24, 2, 3, 1, { 13: 9, 21: 6 })],
+          ['Medium', C.amber, seq(24, 9, 6, 2, { 13: 10 })],
+          ['Low', C.blue, seq(24, 18, 9, 3)] ] },
+        bars: { title: 'Top MITRE tactics', color: C.mint, rows: [['Credential Access',38],['Initial Access',27],['Defense Evasion',22],['Discovery',16],['Lateral Movement',9]] },
+        table: { title: 'Latest incidents', cols: ['ID','Title','Severity','Source','Status'], rows: [
+          ['INC-2294','Exploit attempt across edge firewalls',['High','p-high'],'FortiGate + PAN-OS',['Active','p-med']],
+          ['INC-2291','Password spray followed by sign-in',['High','p-high'],'Entra ID',['Contained','p-ok']],
+          ['INC-2293','Beaconing to newly registered domain',['Medium','p-med'],'Defender XDR',['Active','p-med']],
+          ['INC-2290','Mass file download to personal device',['Low','p-low'],'Purview',['Closed','p-ok']] ] }
+      },
+      fw: {
+        src: 'Source: CommonSecurityLog (DeviceVendor: Fortinet, Palo Alto Networks)',
+        kpis: [['Events ingested','4.8M','FortiGate 61% / PAN 39%','flat'],['Threats blocked','1,932','+12%','up'],['IPS / threat hits','287','+41 vs avg','up'],['Allowed after threat','3','needs review','up']],
+        chart: { title: 'Denied sessions per hour by vendor', series: [
+          ['FortiGate', C.mint, seq(24, 420, 160, 4, { 9: 380, 10: 260 })],
+          ['Palo Alto', C.blue, seq(24, 280, 120, 5, { 9: 210 })] ] },
+        bars: { title: 'Top blocked destination ports', color: C.blue, rows: [['445 / SMB',412],['3389 / RDP',338],['23 / Telnet',201],['22 / SSH',176],['1433 / MSSQL',94]] },
+        table: { title: 'Latest threat events', cols: ['Time','Vendor','Event','Source IP','Action'], rows: [
+          ['21:42','FortiGate','IPS: Log4j RCE signature','192.0.2.77',['dropped','p-ok']],
+          ['21:42','Palo Alto','THREAT / vulnerability','192.0.2.77',['reset-both','p-ok']],
+          ['21:37','Palo Alto','THREAT / spyware (DNS C2)','10.20.4.18',['sinkhole','p-ok']],
+          ['21:31','FortiGate','Policy "legacy-any" match','192.0.2.77',['accept','p-high']],
+          ['21:18','FortiGate','SSL VPN brute force','198.51.100.23',['blocked','p-ok']] ] }
+      },
+      id: {
+        src: 'Source: SigninLogs, AADUserRiskEvents, AuditLogs',
+        kpis: [['Sign-ins','182K','-3%','flat'],['Risky sign-ins','47','+19','up'],['MFA coverage','97.4%','+0.6 pts','down'],['Blocked by CA','1,206','+8%','flat']],
+        chart: { title: 'Failed sign-ins per hour', series: [
+          ['Failed', C.amber, seq(24, 60, 30, 6, { 14: 210, 15: 120 })],
+          ['Locked out', C.red, seq(24, 4, 3, 7, { 14: 30, 15: 14 })] ] },
+        bars: { title: 'Top risk detections', color: C.amber, rows: [['Unfamiliar sign-in properties',19],['Password spray',11],['Anonymous IP address',8],['Impossible travel',6],['Leaked credentials',3]] },
+        table: { title: 'Riskiest users', cols: ['User','Risk','Last event','Location','Response'], rows: [
+          ['j.doe@contoso.example',['High','p-high'],'Password spray success','Unknown (hosting)',['Session revoked','p-ok']],
+          ['a.khan@contoso.example',['Medium','p-med'],'Impossible travel','Doha → Frankfurt',['MFA challenged','p-ok']],
+          ['svc-backup@contoso.example',['Medium','p-med'],'Legacy auth attempt','Internal',['Blocked by CA','p-ok']],
+          ['m.ali@contoso.example',['Low','p-low'],'Anonymous IP','Tor exit',['Monitoring','p-med']] ] }
+      }
+    };
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    function lineChart(series, W) {
+      W = Math.max(260, Math.round(W || 600)); const H = 190, L = 34, R = 18, T = 10, B = 22;
+      const max = Math.max(...series.flatMap(s => s[2])) * 1.1;
+      const x = i => L + i * (W - L - R) / 23, y = v => T + (H - T - B) * (1 - v / max);
+      let g = '';
+      for (let k = 0; k <= 4; k++) {
+        const v = max * k / 4, yy = y(v);
+        g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="rgba(255,255,255,.06)"/>`;
+        g += `<text x="${L - 6}" y="${yy + 3}" text-anchor="end" fill="#5b6064" font-size="9" font-family="Geist Mono, monospace">${v >= 1000 ? (v/1000).toFixed(1)+'k' : Math.round(v)}</text>`;
+      }
+      [0, 6, 12, 18, 23].forEach(i => g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" fill="#5b6064" font-size="9" font-family="Geist Mono, monospace">${hours[i]}</text>`);
+      series.slice().reverse().forEach(([name, col, vals], si) => {
+        const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+        const id = 'g' + Math.random().toString(36).slice(2, 7);
+        g += `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>`;
+        g += `<polygon points="${x(0)},${y(0)} ${pts} ${x(23)},${y(0)}" fill="url(#${id})"/>`;
+        g += `<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round"/>`;
+      });
+      return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart">${g}</svg>`;
+    }
+    function renderDash(key) {
+      const d = D[key];
+      document.getElementById('dashSrc').textContent = d.src;
+      const kpis = d.kpis.map(([l, v, delta, cls]) => `<div class="kpi"><small>${esc(l)}</small><strong>${esc(v)}</strong><span class="${cls}">${esc(delta)}</span></div>`).join('');
+      const legend = d.chart.series.map(([n, c]) => `<span><i style="background:${c}"></i>${esc(n)}</span>`).join('');
+      const bmax = Math.max(...d.bars.rows.map(r => r[1]));
+      const bars = d.bars.rows.map(([l, v]) => `<div class="hbar"><span>${esc(l)}</span><b>${v.toLocaleString()}</b><div class="track"><div class="fill" style="width:${v / bmax * 100}%;background:${d.bars.color}"></div></div></div>`).join('');
+      const cell = c => Array.isArray(c) ? `<span class="pill ${c[1]}">${esc(c[0])}</span>` : esc(c);
+      const table = `<table><thead><tr>${d.table.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${d.table.rows.map(r => `<tr>${r.map(c => `<td>${cell(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      document.getElementById('dashBody').innerHTML = `
+        <div class="kpis">${kpis}</div>
+        <div class="dash-grid">
+          <div class="panel"><div class="panel-h"><span>${esc(d.chart.title)}</span><div class="legend">${legend}</div></div><div class="chart-host"></div></div>
+          <div class="panel"><div class="panel-h"><span>${esc(d.bars.title)}</span></div><div class="hbars">${bars}</div></div>
+        </div>
+        <div class="panel"><div class="panel-h"><span>${esc(d.table.title)}</span></div><div class="tbl-wrap">${table}</div></div>`;
+      currentDash = key;
+      drawChart();
+    }
+    let currentDash = 'soc';
+    function drawChart() {
+      const host = document.querySelector('#dashBody .chart-host');
+      if (host) host.innerHTML = lineChart(D[currentDash].chart.series, host.clientWidth);
+    }
+    let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawChart, 120); });
+    document.querySelectorAll('.dash-tab').forEach(t => t.addEventListener('click', () => {
+      document.querySelectorAll('.dash-tab').forEach(x => x.setAttribute('aria-selected', x === t));
+      currentDash = t.dataset.dash; renderDash(currentDash);
+    }));
+    renderDash('soc');
+
+    // lab terminal
+    const S = {
+      identity: [
+        ['mut','$ nx run scenario --id identity-spray'],
+        ['inf','[ingest]','loaded 4,812 synthetic SigninLogs events'],
+        ['inf','[detect]','NX-ID-0142 matched: 203.0.113.48 -> 27 users, 61 failures'],
+        ['wr','[correlate]','success for j.doe@contoso.example 4m after spray'],
+        ['wr','[correlate]','new MFA method registered from same IP'],
+        ['inf','[enrich]','IP reputation: hosting ASN, first seen 2d ago'],
+        ['ok','[incident]','INC-2291 created, severity High, 3 alerts merged'],
+        ['ok','[playbook]','session revoked, user flagged for reset']
+      ],
+      cloud: [
+        ['mut','$ nx run scenario --id cloud-role'],
+        ['inf','[ingest]','loaded 1,204 synthetic AzureActivity events'],
+        ['inf','[detect]','Owner role assigned at subscription scope, 02:14 local'],
+        ['wr','[correlate]','assignment outside approved change window'],
+        ['wr','[correlate]','same principal listed key vault secrets 6m later'],
+        ['inf','[enrich]','principal created 3h earlier, no owner tag'],
+        ['ok','[incident]','INC-2292 created, severity High'],
+        ['ok','[playbook]','role assignment removed, owner notified']
+      ],
+      network: [
+        ['mut','$ nx run scenario --id net-beacon'],
+        ['inf','[ingest]','loaded 38,900 synthetic CommonSecurityLog rows'],
+        ['inf','[detect]','host WS-114 -> 198.51.100.7 every 60s (+/- 2s jitter)'],
+        ['wr','[correlate]','domain registered 5 days ago, low prevalence'],
+        ['wr','[correlate]','process: rundll32.exe with no command-line args'],
+        ['inf','[enrich]','no prior connections from any other host'],
+        ['ok','[incident]','INC-2293 created, severity Medium'],
+        ['ok','[playbook]','device isolated via Defender for Endpoint']
+      ],
+      firewall: [
+        ['mut','$ nx run scenario --id fw-exploit'],
+        ['inf','[ingest]','loaded 52,310 synthetic CommonSecurityLog rows (Fortinet, Palo Alto)'],
+        ['inf','[detect]','FortiGate IPS: Log4j RCE signature from 192.0.2.77, action=dropped'],
+        ['wr','[correlate]','same source on Palo Alto edge: THREAT/vulnerability, reset-both'],
+        ['wr','[correlate]','one session allowed by branch rule "legacy-any" on FortiGate'],
+        ['inf','[enrich]','source listed on 3 TI feeds, scanning-heavy ASN'],
+        ['ok','[incident]','INC-2294 created, severity High, 2 vendors merged'],
+        ['ok','[playbook]','source added to block lists on FortiGate and PAN-OS']
+      ]
+    };
+    const term = document.getElementById('term'), title = document.getElementById('termTitle');
+    let timer;
+    function line(cls, tag, msg) {
+      const d = document.createElement('div');
+      if (cls === 'mut') { d.className = 'mut'; d.textContent = tag; }
+      else {
+        const s = document.createElement('span'); s.className = cls; s.textContent = tag.padEnd(12, ' ');
+        s.style.whiteSpace = 'pre'; d.appendChild(s); d.appendChild(document.createTextNode(' ' + msg));
+      }
+      return d;
+    }
+    function run(name) {
+      clearTimeout(timer); term.innerHTML = ''; title.textContent = 'lab / ' + name;
+      const lines = S[name]; let i = 0;
+      const caret = document.createElement('div'); caret.innerHTML = '<span class="caret"></span>';
+      const step = () => {
+        if (i < lines.length) {
+          term.appendChild(line(...lines[i++])); term.appendChild(caret);
+          term.scrollTop = term.scrollHeight;
+          timer = setTimeout(step, reduce ? 0 : 420);
+        }
+      };
+      step();
+    }
+    document.querySelectorAll('.scn').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.scn').forEach(x => x.setAttribute('aria-pressed', x === b));
+      run(b.dataset.scn);
+    }));
+    run('identity');
+
+    document.getElementById('copyBtn').addEventListener('click', async e => {
+      try { await navigator.clipboard.writeText(term.innerText.trim()); e.target.textContent = 'Copied'; }
+      catch { e.target.textContent = 'Copy blocked'; }
+      setTimeout(() => e.target.textContent = 'Copy output', 1400);
+    });
+  })();
+  </script>
+</body>
+</html>
